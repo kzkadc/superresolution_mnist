@@ -1,5 +1,5 @@
 # ディープラーニングで簡単な超解像をやってみた
-Qiitaに書いた記事のコードです。 
+[Qiitaに書いた記事](https://qiita.com/kzkadc/items/321f2196bfd4fe0f4132)のコードです。 
 
 ## 準備
 Chainer, OpenCV, NumPyを使います。
