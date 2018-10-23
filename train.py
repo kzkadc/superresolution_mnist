@@ -5,7 +5,7 @@ import numpy as np
 import cv2
 import chainer
 from chainer.backends import cuda
-from chainer import Function, gradient_check, report, training, utils, Variable
+from chainer import Function, gradient_check, report, training, utils, Variable, cuda
 from chainer import datasets, iterators, optimizers, serializers
 from chainer import Link, Chain, ChainList
 import chainer.functions as F
@@ -46,6 +46,7 @@ class CNNAE(Chain):
 		
 parser = argparse.ArgumentParser()
 parser.add_argument("-e", type=int, default=5, help="epoch")
+parser.add_argument("-g", type=int, default=-1, help="GPU ID (negative value indicates CPU mode)")
 args = parser.parse_args()
 
 # MNISTデータセットの取得
@@ -64,15 +65,24 @@ train_iter = iterators.SerialIterator(train, 64, shuffle=True, repeat=True)
 test = datasets.TupleDataset(test_boke, test)
 test_iter = iterators.SerialIterator(test, 64, shuffle=False, repeat=False)
 
+chainer.config.user_gpu = (args.g >= 0)
+if chainer.config.user_gpu:
+	cuda.get_device_from_id(args.g).use()
+	print("GPU mode")
+else:
+	print("CPU mode")
+
 model = CNNAE()	# 超解像モデル作成
+if chainer.config.user_gpu:
+	model.to_gpu()
 opt = optimizers.Adam()	# 最適化アルゴリズムとしてAdamを選択
 opt.setup(model)
 
 # 学習の準備
-updater = training.updaters.StandardUpdater(train_iter, opt)
+updater = training.updaters.StandardUpdater(train_iter, opt, device=args.g)
 trainer = training.Trainer(updater, (args.e,"epoch"))
 # テストの設定
-evaluator = extensions.Evaluator(test_iter, model)
+evaluator = extensions.Evaluator(test_iter, model, device=args.g)
 trainer.extend(evaluator)
 # 学習経過の表示設定
 trainer.extend(extensions.LogReport())
@@ -83,6 +93,8 @@ trainer.extend(extensions.ProgressBar())
 trainer.run()
 
 chainer.config.train = False
+if chainer.config.user_gpu:
+	model.to_cpu()
 
 # 学習終了後に実際にテスト画像を高解像度化してみる
 indices = np.random.choice(len(test), 10).tolist()
