@@ -14,9 +14,9 @@ $ sudo pip install chainer opencv-python numpy
 $ python train.py
 ```
 
-エポック数を指定できます。
+エポック数とGPU（使える場合）を指定できます。
 ```bash
-$ python train.py -e エポック数
+$ python train.py -e エポック数 -g GPUID
 ```
 
 学習後、テストデータをモデルに入力した結果が画像として保存されます。
